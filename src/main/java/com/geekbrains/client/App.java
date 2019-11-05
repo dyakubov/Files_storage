@@ -4,25 +4,21 @@ import java.io.*;
 import java.net.Socket;
 
 public class App implements Runnable {
-    private final int PORT = 4004;
+    private final int PORT = 8189;
     private final String HOST = "localhost";
-    private Socket socket;
-    private BufferedInputStream in;
-    private BufferedOutputStream out;
     @Override
     public void run() {
-        try {
-            socket = new Socket(HOST, PORT);
-            if (socket.isConnected()) System.out.println("Client started");
+        try (Socket socket = new Socket(HOST, PORT);
+            BufferedInputStream in = new BufferedInputStream(socket.getInputStream());
+            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())){
+            System.out.println("Client started");
+            out.write(15);
+            out.flush();
 
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    public void stop() throws IOException {
-        this.socket.close();
-    }
-
     public static void main(String[] args) {
         App app = new App();
         app.run();

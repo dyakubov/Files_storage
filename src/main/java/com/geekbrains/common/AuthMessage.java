@@ -1,21 +1,30 @@
 package com.geekbrains.common;
 
 public class AuthMessage implements AbstractMessage {
-    private byte type;
-    private byte[] authData;
+    private String type;
+    private String[] authData;
 
     public AuthMessage(String login, String password) {
-        this.type = Commands.AUTH;
-        this.authData = new byte[]{Byte.parseByte(login), Byte.parseByte(password)};
+        this.type = Commands.MessageType.AUTH;
+        this.authData = new String[2];
+        authData[0] = login;
+        authData[1] = password;
     }
     @Override
-    public byte getType(){
+    public String getType(){
         return this.type;
     }
 
     @Override
-    public byte[] getAuthData(){
+    public String[] getData(){
         return authData;
+    }
+
+    public String getLogin(){
+        return authData[0];
+    }
+    public String getPassword(){
+        return authData[1];
     }
 
 }

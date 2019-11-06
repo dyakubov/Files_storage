@@ -1,5 +1,6 @@
-package com.geekbrains.netty.server;
+package com.geekbrains.server.server;
 
+import com.geekbrains.common.FileHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -13,6 +14,7 @@ public class EasyServer  {
     private void run() throws Exception{
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+        final Users users = new Users();
 
         try {
             ServerBootstrap b = new ServerBootstrap();
@@ -21,7 +23,7 @@ public class EasyServer  {
                     .childHandler(new ChannelInitializer<SocketChannel>() { // (4)
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addFirst(new ProtocolHandler());
+                            ch.pipeline().addFirst(new ProtocolHandler(), new Decode(), new AuthService(users), new FileHandler());
                         }
                     })
                     .childOption(ChannelOption.SO_KEEPALIVE, true);

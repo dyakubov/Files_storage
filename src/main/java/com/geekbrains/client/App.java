@@ -21,12 +21,32 @@ public class App implements Runnable {
             out.flush();
 
             try {
-                Thread.sleep(100);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
             message = ph.compileMessage(Commands.MessageType.DELETE_FILE, "1.txt");
+            out.write(message.getBytes());
+            out.flush();
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            message = ph.compileMessage(Commands.MessageType.GET_FILE, "3.txt");
+            out.write(message.getBytes());
+            out.flush();
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            message = ph.compileMessage(Commands.MessageType.RENAME_FILE, "3.txt 5.txt");
             out.write(message.getBytes());
             out.flush();
 

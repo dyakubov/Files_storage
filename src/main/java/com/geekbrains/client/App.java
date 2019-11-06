@@ -1,28 +1,39 @@
 package com.geekbrains.client;
 
+import com.geekbrains.server.server.ProtocolHandler;
+
 import java.io.*;
 import java.net.Socket;
+import com.geekbrains.common.Commands;
 
 public class App implements Runnable {
-    private final int PORT = 4004;
+    private final int PORT = 8189;
     private final String HOST = "localhost";
-    private Socket socket;
-    private BufferedInputStream in;
-    private BufferedOutputStream out;
     @Override
     public void run() {
-        try {
-            socket = new Socket(HOST, PORT);
-            if (socket.isConnected()) System.out.println("Client started");
+        try (Socket socket = new Socket(HOST, PORT);
+            BufferedInputStream in = new BufferedInputStream(socket.getInputStream());
+            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())){
+            System.out.println("Client started");
+            ProtocolHandler ph = new ProtocolHandler();
+            String message = ph.compileMessage(Commands.MessageType.AUTH, "ivan 123");
+            out.write(message.getBytes());
+            out.flush();
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            message = ph.compileMessage(Commands.MessageType.DELETE_FILE, "1.txt");
+            out.write(message.getBytes());
+            out.flush();
 
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    public void stop() throws IOException {
-        this.socket.close();
-    }
-
     public static void main(String[] args) {
         App app = new App();
         app.run();

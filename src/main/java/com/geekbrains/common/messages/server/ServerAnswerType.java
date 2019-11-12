@@ -8,6 +8,7 @@ public enum ServerAnswerType {
     ACCESS_DENIED,
     USER_ALREADY_EXIST,
     USER_NOT_FOUND,
+    USER_NOT_AUTHORISED,
     UNKNOWN_COMMAND,
     FILE,
     FILE_NOT_FOUND,

@@ -8,7 +8,11 @@ public abstract class AbstractMessage implements Serializable {
     private static final long serialVersionUID = 5193392663743561680L;
     private User user;
 
-    User getUser(){
+    public User getUser(){
         return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

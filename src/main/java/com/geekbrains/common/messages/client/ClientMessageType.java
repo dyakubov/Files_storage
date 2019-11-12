@@ -6,5 +6,6 @@ public enum  ClientMessageType {
     GET,
     RENAME,
     DELETE,
-    GET_ALL
+    GET_ALL,
+    READY
 }

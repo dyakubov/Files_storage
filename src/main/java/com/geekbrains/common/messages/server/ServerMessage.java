@@ -1,6 +1,7 @@
 package com.geekbrains.common.messages.server;
 
 import com.geekbrains.common.FileContainer;
+import com.geekbrains.common.User;
 
 import java.io.Serializable;
 

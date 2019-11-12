@@ -3,15 +3,18 @@ package com.geekbrains.server;
 import com.geekbrains.common.User;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 public class Users {
     Map<String, String > allUsers;
-    List<User> authorizedUsers;
+    static List<User> authorizedUsers;
 
     public Users(){
+
         allUsers = new HashMap<>();
+        authorizedUsers = new LinkedList<>();
     }
 
     public Map<String, String> getAllUsers(){
@@ -23,10 +26,10 @@ public class Users {
     }
 
     public void addToAuthorizedUsers(User user){
-        this.authorizedUsers.add(user);
+        authorizedUsers.add(user);
     }
 
-    public List<User> getAuthorizedUsers() {
+    public static List<User> getAuthorizedUsers() {
         return authorizedUsers;
     }
 }

@@ -15,18 +15,20 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Scanner;
 
 public class ClientApp implements Runnable {
     private final int PORT = 8188;
     private final String HOST = "localhost";
-    private final long MAX_PART_SIZE = 1024 * 8;
     ObjectEncoderOutputStream oeos = null;
     ObjectDecoderInputStream odis = null;
     ServerMessage sm;
     Scanner console;
     User user;
     String userFolder = "client_storage/";
+    Queue<FileContainer> queue = new LinkedList<>();
     private boolean authOK = true;
     private boolean regOK = true;
 
@@ -79,10 +81,12 @@ public class ClientApp implements Runnable {
                     Object obj = odis.readObject();
                     if (obj instanceof FileContainer) {
                         FileContainer fc = (FileContainer) obj;
+                        queue.add(fc);
                         System.out.printf("New file receiving: %s. Size: %d. Parts: %d %n",
                                 fc.getFileName(),
                                 fc.getSize(),
                                 fc.getOfParts());
+                        writeFileFromContainer(queue.remove());
                         while (fc.getPart() < fc.getOfParts()){
                             obj = odis.readObject();
                             fc = (FileContainer) obj;

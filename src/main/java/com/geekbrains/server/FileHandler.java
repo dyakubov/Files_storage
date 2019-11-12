@@ -8,6 +8,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.image.Kernel;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,8 +22,11 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
     private long fileSize;
     private int parts;
     private int part;
+    long partSize;
+    long offset;
     private Path path;
     private String serverFolder = "server_storage/";
+    byte[] tmp = new byte[(int)(MAX_PART_SIZE)];
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -40,9 +44,8 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
         FileContainer fileContainer = prepareInitFileContainer(path);
         ctx.writeAndFlush(fileContainer);
         in = new FileInputStream(path.toFile());
-        byte[] tmp = new byte[(int)MAX_PART_SIZE];
-        long partSize;
-        long offset = 0;
+        tmp = new byte[(int)MAX_PART_SIZE];
+        offset = 0;
         while (offset != fileSize){
             long count = 0;
             if (!checkIsLastPart()){
@@ -61,12 +64,12 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void sendFileContainer(ChannelHandlerContext ctx, FileContainer fileContainer, byte[] tmp) {
+        part++;
         fileContainer.setPart(part);
         fileContainer.setData(tmp);
         ctx.writeAndFlush(fileContainer);
         System.out.println("Sent " + part + " of " + parts + ". Size: " + fileContainer.getData().length);
-        part++;
-        fileContainer.setPart(part);
+
     }
 
     @NotNull
@@ -79,6 +82,7 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
         fileContainer.setSize(fileSize);
         fileContainer.setPart(part);
         System.out.printf("Init container ready. File size: %d bytes. Parts: %d %n", fileSize, parts);
+        System.out.println();
         return fileContainer;
     }
 
@@ -89,6 +93,7 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
     }
 
     private int countParts(long fileSize){
+        if (fileSize < MAX_PART_SIZE) return 1;
         return fileSize%MAX_PART_SIZE == 0 ?
                 (int)(fileSize/MAX_PART_SIZE) :
                 (int)(fileSize/MAX_PART_SIZE) + 1;

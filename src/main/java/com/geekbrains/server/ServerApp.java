@@ -17,6 +17,7 @@ import io.netty.handler.logging.LoggingHandler;
 public class ServerApp {
     private static final int PORT = 8188;
     private static final int MAX_OBJ_SIZE = 1024 * 1024 * 100; // 10 mb
+    private static final String serverFolder = "server_storage/";
 
     public void run() throws Exception {
         EventLoopGroup mainGroup = new NioEventLoopGroup();
@@ -32,7 +33,8 @@ public class ServerApp {
                                     new ObjectDecoder(MAX_OBJ_SIZE, ClassResolvers.cacheDisabled(null)),
                                     new ObjectEncoder(),
                                     //new AuthHandler(),
-                                    new FileHandler()
+                                    new FileHandler(),
+                                    new ServicesHandler()
                             );
                         }
                     })
@@ -49,5 +51,9 @@ public class ServerApp {
 
     public static void main(String[] args) throws Exception {
         new ServerApp().run();
+    }
+
+    public static String getServerFolder() {
+        return serverFolder;
     }
 }

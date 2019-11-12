@@ -19,6 +19,9 @@ public class FileContainer implements Serializable {
         this.size = 0;
     }
 
+    public FileContainer() {
+    }
+
     public long getSize() {
         return size;
     }

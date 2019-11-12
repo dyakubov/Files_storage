@@ -17,43 +17,43 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class FileHandler extends ChannelInboundHandlerAdapter {
-    private final long MAX_PART_SIZE = 1024 * 8;
+    private final long PART_SIZE = 1024 * 8;
     private InputStream in;
     private long fileSize;
     private int parts;
     private int part;
-    long partSize;
-    long offset;
     private Path path;
-    private String serverFolder = "server_storage/";
-    byte[] tmp = new byte[(int)(MAX_PART_SIZE)];
+    private String serverFolder = ServerApp.getServerFolder();
+    private byte[] tmp = new byte[(int)(PART_SIZE)];
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        FileRequest fr = (FileRequest) msg;
-        if (Files.exists(Paths.get(serverFolder + fr.getFileName()))) {
-            path = Paths.get(serverFolder + fr.getFileName());
-            sendFile(path, ctx);
-        } else {
-            System.out.println("File " + fr.getFileName() + " not found");
-            ctx.writeAndFlush(new ServerMessage(ServerAnswerType.FILE_NOT_FOUND));
-        }
+        if (msg instanceof FileRequest){
+            FileRequest fr = (FileRequest) msg;
+            if (Files.exists(Paths.get(serverFolder + fr.getFileName()))) {
+                path = Paths.get(serverFolder + fr.getFileName());
+                sendFile(path, ctx);
+            } else {
+                System.out.println("File " + fr.getFileName() + " not found");
+                ctx.writeAndFlush(new ServerMessage(ServerAnswerType.FILE_NOT_FOUND));
+            }
+        } else ctx.fireChannelRead(msg);
     }
 
     public void sendFile(Path path, ChannelHandlerContext ctx) throws IOException {
         FileContainer fileContainer = prepareInitFileContainer(path);
         ctx.writeAndFlush(fileContainer);
         in = new FileInputStream(path.toFile());
-        tmp = new byte[(int)MAX_PART_SIZE];
-        offset = 0;
+        tmp = new byte[(int)PART_SIZE];
+        long offset = 0;
         while (offset != fileSize){
             long count = 0;
-            if (!checkIsLastPart()){
-                partSize = (int)MAX_PART_SIZE;
-            } else {
-                partSize = fileSize - (part*MAX_PART_SIZE);
-                tmp = new byte[(int)partSize];
-                System.out.println("Last part detected: " + partSize );
+            long partSize;
+            partSize = (int)PART_SIZE;
+            if (checkIsLastPart()){
+                partSize = fileSize - (part*PART_SIZE);
+                tmp = new byte[(int) partSize];
+                System.out.println("Last part detected: " + partSize);
             }
             while (count != partSize){
                 count = in.read(tmp, 0, (int)(partSize));
@@ -93,10 +93,10 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
     }
 
     private int countParts(long fileSize){
-        if (fileSize < MAX_PART_SIZE) return 1;
-        return fileSize%MAX_PART_SIZE == 0 ?
-                (int)(fileSize/MAX_PART_SIZE) :
-                (int)(fileSize/MAX_PART_SIZE) + 1;
+        if (fileSize < PART_SIZE) return 1;
+        return fileSize%PART_SIZE == 0 ?
+                (int)(fileSize/PART_SIZE) :
+                (int)(fileSize/PART_SIZE) + 1;
     }
 
     private boolean checkIsLastPart(){

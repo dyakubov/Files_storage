@@ -2,6 +2,7 @@ package com.geekbrains.client.console_client.handlers;
 
 import com.geekbrains.client.network.Network;
 import com.geekbrains.common.FileContainer;
+import com.geekbrains.common.messages.client.AllFilesRequest;
 import com.geekbrains.common.messages.client.DeleteRequest;
 import com.geekbrains.common.messages.client.FileRequest;
 import com.geekbrains.common.messages.client.RenameRequest;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 
 import static com.geekbrains.client.network.Network.userFolder;
 
@@ -82,5 +84,14 @@ public class ClientFileHandler {
     void sendRenameRequest(String filename, String newFileName) throws IOException, ClassNotFoundException {
         network.sendMsg(new RenameRequest(filename, newFileName));
         network.listenServerAnswer();
+    }
+
+    void allFilesRequest() throws IOException, ClassNotFoundException {
+        network.sendMsg(new AllFilesRequest());
+        network.listenServerAnswer();
+    }
+
+    public void printAllFiles(List<String> list){
+        list.forEach(System.out::println);
     }
 }

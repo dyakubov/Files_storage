@@ -1,9 +1,11 @@
 package com.geekbrains.server;
 
 import com.geekbrains.common.FileContainer;
+import com.geekbrains.common.messages.client.AllFilesRequest;
 import com.geekbrains.common.messages.client.DeleteRequest;
 import com.geekbrains.common.messages.client.FileRequest;
 import com.geekbrains.common.messages.client.RenameRequest;
+import com.geekbrains.common.messages.server.FilesList;
 import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
 import io.netty.channel.ChannelHandlerContext;
@@ -17,6 +19,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class FileHandler extends ChannelInboundHandlerAdapter {
     private final long PART_SIZE = 1024 * 8;
@@ -56,6 +60,8 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
                 System.out.println("File " + rr.getFileName() + " not found");
                 ctx.writeAndFlush(new ServerMessage(ServerAnswerType.FILE_NOT_FOUND));
             }
+        } else if (msg instanceof AllFilesRequest){
+            ctx.writeAndFlush(new FilesList(ServerAnswerType.FILE_LIST, getAllFiles()));
         }
 
         else ctx.fireChannelRead(msg);
@@ -122,5 +128,16 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
 
     private boolean checkIsLastPart(){
         return parts - part == 1;
+    }
+
+    private List<String> getAllFiles() throws IOException {
+        return Files.walk(Paths.get(serverFolder)).filter(Files::isRegularFile).filter(f -> {
+            try {
+                return !Files.isHidden(f);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return false;
+        }).map(Path::toFile).map(File::getName).collect(Collectors.toList());
     }
 }

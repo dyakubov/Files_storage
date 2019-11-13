@@ -36,6 +36,9 @@ public class ConsoleHandler {
                     }
                     cfh.sendRenameRequest(parseCommand(command)[1], parseCommand(command)[2]);
                     break;
+                case "dir":
+                    cfh.allFilesRequest();
+                    break;
                 case "exit":
                     System.exit(0);
                     break;

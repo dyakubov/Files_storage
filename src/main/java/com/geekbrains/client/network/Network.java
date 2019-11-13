@@ -1,6 +1,7 @@
 package com.geekbrains.client.network;
 
 import com.geekbrains.client.console_client.handlers.AuthHandler;
+import com.geekbrains.client.console_client.handlers.ClientFileHandler;
 import com.geekbrains.client.console_client.handlers.ConsoleHandler;
 import com.geekbrains.common.FileContainer;
 import com.geekbrains.common.User;
@@ -10,9 +11,6 @@ import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Scanner;
 
 public class Network {
@@ -21,13 +19,14 @@ public class Network {
     private ObjectEncoderOutputStream oeos = null;
     private ObjectDecoderInputStream odis = null;
     private User user;
-    private static final String userFolder = "client_storage/";
+    public static final String userFolder = "client_storage/";
 
     private FileContainer fc = new FileContainer();
     private Scanner console;
     private String command;
-    private ConsoleHandler ch;
     private AuthHandler ah;
+    private ClientFileHandler cfh;
+    private ConsoleHandler ch;
 
     public Network(Scanner console) {
         this.console = console;
@@ -37,14 +36,19 @@ public class Network {
         try (Socket socket = new Socket(HOST, PORT)) {
             oeos = new ObjectEncoderOutputStream(socket.getOutputStream());
             odis = new ObjectDecoderInputStream(socket.getInputStream());
-            ch = new ConsoleHandler(console, this);
-            ah = new AuthHandler(ch, this);
+
+            initHandlers();
 
             ah.clientAuth();
-            ch.startSession(user);
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    private void initHandlers() {
+        ch = new ConsoleHandler(console, this);
+        ah = new AuthHandler(ch, this);
+        cfh = new ClientFileHandler(this);
     }
 
     public void sendMsg(Object obj) {
@@ -59,59 +63,30 @@ public class Network {
     public void listenServerAnswer() throws ClassNotFoundException, IOException {
         Object obj = odis.readObject();
         if (obj instanceof FileContainer) {
-            downloadFile(obj);
+            fc = (FileContainer)obj;
+            cfh.downloadFile(fc);
         } else {
             ServerMessage sm = (ServerMessage) obj;
             System.out.println(sm.getServerAnswerType());
         }
     }
 
-    private void downloadFile(Object obj) throws IOException, ClassNotFoundException {
-        fc = (FileContainer) obj;
-        System.out.printf("New file receiving: %s. Size: %d. Parts: %d %n",
-                fc.getFileName(),
-                fc.getSize(),
-                fc.getOfParts());
-        writeFileFromContainer(fc);
-        while (fc.getPart() < fc.getOfParts()) {
-            obj = odis.readObject();
-            fc = (FileContainer) obj;
-            writeFileFromContainer(fc);
-        }
+
+
+
+    public Object readObject() throws IOException, ClassNotFoundException {
+        return odis.readObject();
     }
 
-    private void writeFileFromContainer(FileContainer fc) throws IOException {
-        if (fc.getPart() == 0) {
-            byte[] b = new byte[0];
-            Files.write(Paths.get(userFolder + fc.getFileName()), b, StandardOpenOption.CREATE);
-            System.out.println("Init file created. Size: " + Paths.get(userFolder + fc.getFileName()).toFile().length());
-            System.out.print("Downloading...   ");
-        } else {
-            Files.write(Paths.get(userFolder + fc.getFileName()), fc.getData(), StandardOpenOption.APPEND);
-//            System.out.printf("Written part: %d of %d. Size: %d %n",
-//                    fc.getPart(), fc.getOfParts(), fc.getData().length);
-
-            printDownloadProgress(fc.getPart(), fc.getOfParts());
-        }
+    public ConsoleHandler getConsole() {
+        return ch;
     }
 
-    private void printDownloadProgress(long part, long parts){
-        if (parts < 10){
-            System.out.print("\b\b\b");
-            System.out.print(((part/parts)*100)+"%");
-            System.out.println();
-            return;
-        }
-        if (part%(parts/10) == 0){
-            System.out.print("\b\b\b");
-            ///System.out.print("...");
-            System.out.print(((((part*10)/parts)+1)*10)+"%");
-        } else if (part == parts) {
-            System.out.println();
-        }
+    public User getUser() {
+        return user;
     }
 
-    public ServerMessage readObject() throws IOException, ClassNotFoundException {
-        return (ServerMessage)odis.readObject();
+    public ClientFileHandler getCfh() {
+        return cfh;
     }
 }

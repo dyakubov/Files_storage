@@ -1,14 +1,16 @@
 package com.geekbrains.server;
 
 import com.geekbrains.common.FileContainer;
+import com.geekbrains.common.messages.client.DeleteRequest;
 import com.geekbrains.common.messages.client.FileRequest;
+import com.geekbrains.common.messages.client.RenameRequest;
 import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.image.Kernel;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,13 +20,11 @@ import java.nio.file.Paths;
 
 public class FileHandler extends ChannelInboundHandlerAdapter {
     private final long PART_SIZE = 1024 * 8;
-    private InputStream in;
     private long fileSize;
     private int parts;
     private int part;
     private Path path;
     private String serverFolder = ServerApp.getServerFolder();
-    private byte[] tmp = new byte[(int)(PART_SIZE)];
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -37,18 +37,40 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
                 System.out.println("File " + fr.getFileName() + " not found");
                 ctx.writeAndFlush(new ServerMessage(ServerAnswerType.FILE_NOT_FOUND));
             }
-        } else ctx.fireChannelRead(msg);
+        } else if (msg instanceof DeleteRequest){
+            DeleteRequest dr = (DeleteRequest)msg;
+            if (Files.deleteIfExists(Paths.get(serverFolder + dr.getFileName()))){
+                ctx.writeAndFlush(new ServerMessage(ServerAnswerType.DELETED));
+            } else {
+                System.out.println("File " + dr.getFileName() + " not found");
+                ctx.writeAndFlush(new ServerMessage(ServerAnswerType.FILE_NOT_FOUND));
+            }
+        } else if (msg instanceof RenameRequest){
+            RenameRequest rr = (RenameRequest)msg;
+            if (Files.exists(Paths.get(serverFolder + rr.getFileName()))){
+                path = Paths.get(serverFolder + rr.getFileName());
+                if (path.toFile().renameTo(Paths.get(serverFolder + rr.getRenameTo()).toFile())){
+                    ctx.writeAndFlush(new ServerMessage(ServerAnswerType.RENAMED));
+                } else ctx.writeAndFlush(new ServerMessage(ServerAnswerType.ACCESS_DENIED));
+            } else {
+                System.out.println("File " + rr.getFileName() + " not found");
+                ctx.writeAndFlush(new ServerMessage(ServerAnswerType.FILE_NOT_FOUND));
+            }
+        }
+
+        else ctx.fireChannelRead(msg);
     }
 
     public void sendFile(Path path, ChannelHandlerContext ctx) throws IOException {
         FileContainer fileContainer = prepareInitFileContainer(path);
         ctx.writeAndFlush(fileContainer);
-        in = new FileInputStream(path.toFile());
-        tmp = new byte[(int)PART_SIZE];
+        InputStream in = new FileInputStream(path.toFile()); //FIXME
+        byte[] tmp = new byte[(int) PART_SIZE];
         long offset = 0;
+        long count;
+        long partSize;
         while (offset != fileSize){
-            long count = 0;
-            long partSize;
+            count = 0;
             partSize = (int)PART_SIZE;
             if (checkIsLastPart()){
                 partSize = fileSize - (part*PART_SIZE);
@@ -64,8 +86,7 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void sendFileContainer(ChannelHandlerContext ctx, FileContainer fileContainer, byte[] tmp) {
-        part++;
-        fileContainer.setPart(part);
+        fileContainer.setPart(++part);
         fileContainer.setData(tmp);
         ctx.writeAndFlush(fileContainer);
         System.out.println("Sent " + part + " of " + parts + ". Size: " + fileContainer.getData().length);

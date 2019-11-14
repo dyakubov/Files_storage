@@ -1,9 +1,8 @@
-package com.geekbrains.server;
-
-import com.geekbrains.common.User;
+package com.geekbrains.server.auth;
 
 import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
+import com.geekbrains.server.users.Users;
 
 public class TestAuthService implements AuthInterface {
     private Users users;

@@ -1,4 +1,4 @@
-package com.geekbrains.server;
+package com.geekbrains.server.users;
 
 import com.geekbrains.common.User;
 

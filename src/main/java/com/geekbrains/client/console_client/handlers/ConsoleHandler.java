@@ -5,23 +5,22 @@ import com.geekbrains.common.User;
 
 import java.io.IOException;
 import java.util.Scanner;
-
 public class ConsoleHandler {
     private Scanner console;
     private Network network;
-    private ClientFileHandler cfh;
+    private String command;
 
     public ConsoleHandler(Scanner console, Network network) {
         this.console = console;
         this.network = network;
     }
 
-    public void startSession(User user) throws ClassNotFoundException, IOException {
-
-        this.cfh = network.getCfh();
+    void startSession(User user) throws ClassNotFoundException, IOException {
+        ClientFileHandler cfh = network.getCfh();
         while (true) {
-            System.out.println("Type command");
-            String command = console.nextLine();
+            write("Type command");
+            command = "";
+            command = console.nextLine();
             switch (parseCommand(command)[0]){
                 case "get":
                     cfh.sendFileRequest(parseCommand(command)[1]);
@@ -31,10 +30,13 @@ public class ConsoleHandler {
                     break;
                 case "rename":
                     if (parseCommand(command).length < 3){
-                        System.out.println("Wrong request format. Example: rename 1.txt 2.txt");
+                        write("Wrong request format. Example: rename 1.txt 2.txt");
                         break;
                     }
                     cfh.sendRenameRequest(parseCommand(command)[1], parseCommand(command)[2]);
+                    break;
+                case "upload":
+                    cfh.sendFile(parseCommand(command)[1]);
                     break;
                 case "dir":
                     cfh.allFilesRequest();
@@ -57,7 +59,7 @@ public class ConsoleHandler {
         System.out.println(text);
     }
 
-    public static void printDownloadProgress(long part, long parts){
+    public static void printProgressBar(long part, long parts){
         if (parts < 10){
             System.out.print("\b\b\b");
             System.out.print(((part/parts)*100)+"%");

@@ -1,5 +1,6 @@
-package com.geekbrains.server;
+package com.geekbrains.server.netty;
 
+import com.geekbrains.server.netty.handlers.ServerFileHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -14,10 +15,12 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
+import static com.geekbrains.common.Settings.PORT;
+
 public class ServerApp {
-    private static final int PORT = 8188;
+
     private static final int MAX_OBJ_SIZE = 1024 * 1024 * 100; // 10 mb
-    private static final String serverFolder = "server_storage/";
+
 
     public void run() throws Exception {
         EventLoopGroup mainGroup = new NioEventLoopGroup();
@@ -33,8 +36,7 @@ public class ServerApp {
                                     new ObjectDecoder(MAX_OBJ_SIZE, ClassResolvers.cacheDisabled(null)),
                                     new ObjectEncoder(),
                                     //new AuthHandler(),
-                                    new FileHandler(),
-                                    new ServicesHandler()
+                                    new ServerFileHandler()
                             );
                         }
                     })
@@ -51,9 +53,5 @@ public class ServerApp {
 
     public static void main(String[] args) throws Exception {
         new ServerApp().run();
-    }
-
-    public static String getServerFolder() {
-        return serverFolder;
     }
 }

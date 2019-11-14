@@ -6,21 +6,23 @@ import com.geekbrains.client.console_client.handlers.ConsoleHandler;
 import com.geekbrains.common.FileContainer;
 import com.geekbrains.common.User;
 import com.geekbrains.common.messages.server.FilesList;
+import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
 import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
 import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.List;
 import java.util.Scanner;
 
+import static com.geekbrains.common.Settings.HOST;
+import static com.geekbrains.common.Settings.PORT;
+
 public class Network {
-    private static final int PORT = 8188;
-    private static final String HOST = "localhost";
     private ObjectEncoderOutputStream oeos = null;
     private ObjectDecoderInputStream odis = null;
     private User user;
-    public static final String userFolder = "client_storage/";
 
     private FileContainer fc = new FileContainer();
     private Scanner console;
@@ -28,6 +30,8 @@ public class Network {
     private AuthHandler ah;
     private ClientFileHandler cfh;
     private ConsoleHandler ch;
+
+    private List<String> filesOnServer;
 
     public Network(Scanner console) {
         this.console = console;
@@ -68,15 +72,13 @@ public class Network {
             cfh.downloadFile(fc);
         } else if (obj instanceof FilesList) {
             FilesList fl = (FilesList)obj;
-            cfh.printAllFiles(fl.getAllFiles());
+            filesOnServer = fl.getAllFiles();
+            cfh.printAllFiles(filesOnServer);
         } else {
             ServerMessage sm = (ServerMessage) obj;
             System.out.println(sm.getServerAnswerType());
         }
     }
-
-
-
 
     public Object readObject() throws IOException, ClassNotFoundException {
         return odis.readObject();

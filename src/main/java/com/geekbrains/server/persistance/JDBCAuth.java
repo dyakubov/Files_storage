@@ -2,7 +2,7 @@
 //
 //import com.geekbrains.common.messages.server.ServerAnswerType;
 //import com.geekbrains.common.messages.server.ServerMessage;
-//import com.geekbrains.server.AuthInterface;
+//import com.geekbrains.server.auth.AuthInterface;
 //
 //import java.sql.*;
 //

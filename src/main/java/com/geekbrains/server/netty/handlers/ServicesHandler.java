@@ -1,4 +1,4 @@
-package com.geekbrains.server;
+package com.geekbrains.server.netty.handlers;
 
 import com.geekbrains.common.messages.client.DeleteRequest;
 import com.geekbrains.common.messages.client.ServiceMessage;
@@ -11,8 +11,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static com.geekbrains.common.Settings.SERVER_FOLDER;
+
 public class ServicesHandler extends ChannelInboundHandlerAdapter {
-    private final String serverFolder = ServerApp.getServerFolder();
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ServiceMessage){
@@ -34,7 +35,7 @@ public class ServicesHandler extends ChannelInboundHandlerAdapter {
 
     private void deleteFileFromServer(Object msg, ChannelHandlerContext ctx) throws IOException {
         DeleteRequest dr = (DeleteRequest)msg;
-        if (Files.deleteIfExists(Paths.get(serverFolder + dr.getFileName()))) {
+        if (Files.deleteIfExists(Paths.get(SERVER_FOLDER + dr.getFileName()))) {
             ctx.writeAndFlush(new ServerMessage(ServerAnswerType.DELETED));
         } else {
             ctx.writeAndFlush(new ServerMessage(ServerAnswerType.FILE_NOT_FOUND));

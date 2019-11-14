@@ -1,5 +1,6 @@
-package com.geekbrains.server;
+package com.geekbrains.server.netty.handlers;
 
+import com.geekbrains.client.console_client.handlers.ConsoleHandler;
 import com.geekbrains.common.FileContainer;
 import com.geekbrains.common.messages.client.AllFilesRequest;
 import com.geekbrains.common.messages.client.DeleteRequest;
@@ -19,23 +20,25 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FileHandler extends ChannelInboundHandlerAdapter {
-    private final long PART_SIZE = 1024 * 8;
+import static com.geekbrains.common.Settings.*;
+
+public class ServerFileHandler extends ChannelInboundHandlerAdapter {
     private long fileSize;
     private int parts;
     private int part;
     private Path path;
-    private String serverFolder = ServerApp.getServerFolder();
-
+    private FileContainer fc;
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof FileRequest){
             FileRequest fr = (FileRequest) msg;
-            if (Files.exists(Paths.get(serverFolder + fr.getFileName()))) {
-                path = Paths.get(serverFolder + fr.getFileName());
+            System.out.printf("%s: %s%n", fr.getClass(), fr.getFileName());
+            if (Files.exists(Paths.get(SERVER_FOLDER + fr.getFileName()))) {
+                path = Paths.get(SERVER_FOLDER + fr.getFileName());
                 sendFile(path, ctx);
             } else {
                 System.out.println("File " + fr.getFileName() + " not found");
@@ -43,7 +46,8 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
             }
         } else if (msg instanceof DeleteRequest){
             DeleteRequest dr = (DeleteRequest)msg;
-            if (Files.deleteIfExists(Paths.get(serverFolder + dr.getFileName()))){
+            System.out.printf("%s: %s%n", dr.getClass(), dr.getFileName());
+            if (Files.deleteIfExists(Paths.get(SERVER_FOLDER + dr.getFileName()))){
                 ctx.writeAndFlush(new ServerMessage(ServerAnswerType.DELETED));
             } else {
                 System.out.println("File " + dr.getFileName() + " not found");
@@ -51,23 +55,28 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
             }
         } else if (msg instanceof RenameRequest){
             RenameRequest rr = (RenameRequest)msg;
-            if (Files.exists(Paths.get(serverFolder + rr.getFileName()))){
-                path = Paths.get(serverFolder + rr.getFileName());
-                if (path.toFile().renameTo(Paths.get(serverFolder + rr.getRenameTo()).toFile())){
+            System.out.printf("%s: %s%n", rr.getClass(), rr.getFileName());
+            if (Files.exists(Paths.get(SERVER_FOLDER + rr.getFileName()))){
+                path = Paths.get(SERVER_FOLDER + rr.getFileName());
+                if (path.toFile().renameTo(Paths.get(SERVER_FOLDER + rr.getRenameTo()).toFile())){
                     ctx.writeAndFlush(new ServerMessage(ServerAnswerType.RENAMED));
                 } else ctx.writeAndFlush(new ServerMessage(ServerAnswerType.ACCESS_DENIED));
             } else {
                 System.out.println("File " + rr.getFileName() + " not found");
                 ctx.writeAndFlush(new ServerMessage(ServerAnswerType.FILE_NOT_FOUND));
             }
-        } else if (msg instanceof AllFilesRequest){
+        } else if (msg instanceof FileContainer) {
+            fc = (FileContainer)msg;
+            writeFileFromContainer(fc);
+        } if (msg instanceof AllFilesRequest){
+            System.out.println("AllFilesRequest");
             ctx.writeAndFlush(new FilesList(ServerAnswerType.FILE_LIST, getAllFiles()));
         }
 
         else ctx.fireChannelRead(msg);
     }
 
-    public void sendFile(Path path, ChannelHandlerContext ctx) throws IOException {
+    private void sendFile(Path path, ChannelHandlerContext ctx) throws IOException {
         FileContainer fileContainer = prepareInitFileContainer(path);
         ctx.writeAndFlush(fileContainer);
         InputStream in = new FileInputStream(path.toFile()); //FIXME
@@ -131,7 +140,7 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
     }
 
     private List<String> getAllFiles() throws IOException {
-        return Files.walk(Paths.get(serverFolder)).filter(Files::isRegularFile).filter(f -> {
+        return Files.walk(Paths.get(SERVER_FOLDER)).filter(Files::isRegularFile).filter(f -> {
             try {
                 return !Files.isHidden(f);
             } catch (IOException e) {
@@ -139,5 +148,19 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
             }
             return false;
         }).map(Path::toFile).map(File::getName).collect(Collectors.toList());
+    }
+
+    private void writeFileFromContainer(FileContainer fc) throws IOException {
+        if (fc.getPart() == 0) {
+            byte[] b = new byte[0];
+            Files.write(Paths.get(SERVER_FOLDER + fc.getFileName()), b, StandardOpenOption.CREATE);
+            System.out.println("Init file created");
+            System.out.print("Downloading...   ");
+        } else {
+            Files.write(Paths.get(SERVER_FOLDER + fc.getFileName()), fc.getData(), StandardOpenOption.APPEND);
+//            System.out.printf("Written part: %d of %d. Size: %d %n",
+//                    fc.getPart(), fc.getOfParts(), fc.getData().length);
+            ConsoleHandler.printProgressBar(fc.getPart(), fc.getOfParts());
+        }
     }
 }

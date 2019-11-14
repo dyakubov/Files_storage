@@ -1,4 +1,4 @@
-package com.geekbrains.server;
+package com.geekbrains.server.auth;
 
 import com.geekbrains.common.User;
 import com.geekbrains.common.messages.server.ServerMessage;

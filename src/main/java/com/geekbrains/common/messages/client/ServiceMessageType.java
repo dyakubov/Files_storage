@@ -1,11 +1,11 @@
 package com.geekbrains.common.messages.client;
 
-public enum  ClientMessageType {
+public enum ServiceMessageType {
     AUTH,
     REG,
     GET,
     RENAME,
     DELETE,
-    GET_ALL,
+    DIR,
     UPLOAD
 }

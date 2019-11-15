@@ -6,4 +6,5 @@ public class Settings {
     public static final String HOST = "localhost";
     public static final String USER_FOLDER = "client_storage/";
     public static final String SERVER_FOLDER = "server_storage/";
+    public static final boolean TEST_MODE = false;
 }

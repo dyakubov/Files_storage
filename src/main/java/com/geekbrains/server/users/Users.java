@@ -2,34 +2,29 @@ package com.geekbrains.server.users;
 
 import com.geekbrains.common.User;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.io.Serializable;
+import java.util.*;
+import java.util.function.IntSupplier;
 
-public class Users {
-    Map<String, String > allUsers;
-    static List<User> authorizedUsers;
+public class Users implements Serializable {
+    private Map<String, User > allUsers;
 
     public Users(){
-
         allUsers = new HashMap<>();
-        authorizedUsers = new LinkedList<>();
     }
 
-    public Map<String, String> getAllUsers(){
+    public Map<String, User> getAllUsers(){
         return allUsers;
     }
 
-    public void addToAllUser(String login, String pass){
-        this.allUsers.put(login, pass);
+    public int addToAllUserAndReturnID(User user){
+        int lastID = Arrays.stream(allUsers.entrySet().toArray()).mapToInt(v -> user.getId()).max().orElseGet(()->0);
+        user.setId(++lastID);
+        allUsers.put(user.getLogin(), user);
+        return lastID;
     }
 
-    public void addToAuthorizedUsers(User user){
-        authorizedUsers.add(user);
-    }
-
-    public static List<User> getAuthorizedUsers() {
-        return authorizedUsers;
+    public User getUserById(int id){
+        return allUsers.get(id);
     }
 }

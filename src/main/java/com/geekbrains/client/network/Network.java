@@ -6,7 +6,6 @@ import com.geekbrains.client.console_client.handlers.ConsoleHandler;
 import com.geekbrains.common.FileContainer;
 import com.geekbrains.common.User;
 import com.geekbrains.common.messages.server.FilesList;
-import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
 import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
 import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
@@ -26,12 +25,9 @@ public class Network {
 
     private FileContainer fc = new FileContainer();
     private Scanner console;
-    private String command;
     private AuthHandler ah;
     private ClientFileHandler cfh;
     private ConsoleHandler ch;
-
-    private List<String> filesOnServer;
 
     public Network(Scanner console) {
         this.console = console;
@@ -72,7 +68,7 @@ public class Network {
             cfh.downloadFile(fc);
         } else if (obj instanceof FilesList) {
             FilesList fl = (FilesList)obj;
-            filesOnServer = fl.getAllFiles();
+            List<String> filesOnServer = fl.getAllFiles();
             cfh.printAllFiles(filesOnServer);
         } else {
             ServerMessage sm = (ServerMessage) obj;

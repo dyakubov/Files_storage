@@ -9,21 +9,23 @@ public class ServerMessage implements Serializable {
     private static final long serialVersionUID = 5193392663743561680L;
     private ServerAnswerType serverAnswerType;
     private FileContainer fileContainer;
+    private String message;
 
     public ServerMessage(ServerAnswerType serverAnswerType) {
         this.serverAnswerType = serverAnswerType;
     }
-
-    public ServerMessage(ServerAnswerType serverAnswerType, FileContainer fileContainer) {
+    public ServerMessage(ServerAnswerType serverAnswerType, String message) {
         this.serverAnswerType = serverAnswerType;
-        this.fileContainer = fileContainer;
+        this.message = message;
     }
 
     public ServerAnswerType getServerAnswerType() {
         return serverAnswerType;
     }
-
     public FileContainer getFileContainer() {
         return fileContainer;
+    }
+    public String getMessage() {
+        return message;
     }
 }

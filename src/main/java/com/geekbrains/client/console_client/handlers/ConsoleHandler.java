@@ -2,13 +2,19 @@ package com.geekbrains.client.console_client.handlers;
 
 import com.geekbrains.client.network.Network;
 import com.geekbrains.common.User;
+import com.geekbrains.common.messages.client.ServiceMessage;
+import com.geekbrains.common.messages.client.ServiceMessageType;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Scanner;
+
+import static com.geekbrains.common.Settings.USER_FOLDER;
+
 public class ConsoleHandler {
     private Scanner console;
     private Network network;
-    private String command;
 
     public ConsoleHandler(Scanner console, Network network) {
         this.console = console;
@@ -18,45 +24,103 @@ public class ConsoleHandler {
     void startSession(User user) throws ClassNotFoundException, IOException {
         ClientFileHandler cfh = network.getCfh();
         while (true) {
-            write("Type command");
-            command = "";
-            command = console.nextLine();
+            writeLine("Type command");
+            String command = console.nextLine().toLowerCase();
             switch (parseCommand(command)[0]){
                 case "get":
-                    cfh.sendFileRequest(parseCommand(command)[1]);
+                    sendFileRequest(user, command);
                     break;
                 case "del":
-                    cfh.sendDeleteRequest(parseCommand(command)[1]);
+                    sendDelRequest(user, parseCommand(command)[1]);
                     break;
                 case "rename":
-                    if (parseCommand(command).length < 3){
-                        write("Wrong request format. Example: rename 1.txt 2.txt");
-                        break;
-                    }
-                    cfh.sendRenameRequest(parseCommand(command)[1], parseCommand(command)[2]);
+                    sendRenameRequest(user, command);
                     break;
                 case "upload":
                     cfh.sendFile(parseCommand(command)[1]);
                     break;
                 case "dir":
-                    cfh.allFilesRequest();
+                    sendDirRequest(user);
                     break;
                 case "exit":
                     System.exit(0);
                     break;
+
+                case "help":
+                    printHelpFile();
+                    break;
                 default:
-                    System.out.println("Unknown command " + command);
+                    writeLine("Unknown command " + command);
                     break;
             }
         }
     }
 
-    public String getText(){
+    private void printHelpFile() throws IOException {
+        BufferedReader fin = new BufferedReader(new FileReader("src/main/resources/help.txt"));
+        String line;
+        while ((line = fin.readLine()) != null) {
+            writeLine(line);
+        }
+    }
+
+    private void sendDirRequest(User user) throws ClassNotFoundException, IOException {
+        network.sendMsg(new ServiceMessage(ServiceMessageType.DIR, user));
+        network.listenServerAnswer();
+    }
+
+    private void sendRenameRequest(User user, String command) throws ClassNotFoundException, IOException {
+        if (parseCommand(command).length < 3){
+            writeLine("Wrong request format. Type 'help' to get instructions");
+            return;
+        }
+        network.sendMsg(new ServiceMessage(ServiceMessageType.RENAME, user, parseCommand(command)[1] + " " + parseCommand(command)[2]));
+        network.listenServerAnswer();
+    }
+
+    private void sendFileRequest(User user, String command) throws IOException, ClassNotFoundException {
+        if (parseCommand(command).length < 2){
+            writeLine("Unknown command " + command);
+            return;
+        }
+        String fileName = parseCommand(command)[1];
+        if (ClientFileHandler.fileExistOnClient(parseCommand(command)[1])){
+            writeLine("File " + fileName + " already exist");
+            writeLine("Overwrite? Y/N");
+            if (getText().equals("Y")){
+                if (Files.deleteIfExists(Paths.get(USER_FOLDER + fileName))){
+                    network.sendMsg(new ServiceMessage(ServiceMessageType.GET, user, fileName));
+                    network.listenServerAnswer();
+                }
+            } else {
+                writeLine("Aborted");
+            }
+        } else {
+            network.sendMsg(new ServiceMessage(ServiceMessageType.GET, user, fileName));
+            network.listenServerAnswer();
+        }
+    }
+
+    private void sendDelRequest(User user, String filename) throws ClassNotFoundException, IOException {
+        writeLine("Do you really want to delete file " + filename + " from server? Y/N");
+        if (getText().equals("Y")){
+            network.sendMsg(new ServiceMessage(ServiceMessageType.DELETE, user, filename));
+            network.listenServerAnswer();
+        } else {
+            writeLine("Aborted");
+        }
+    }
+
+    String getText(){
         return console.nextLine();
     }
 
-    public void write(String text){
+    void writeLine(String text){
         System.out.println(text);
+    }
+
+    void write(String text){
+        System.out.print(text);
     }
 
     public static void printProgressBar(long part, long parts){

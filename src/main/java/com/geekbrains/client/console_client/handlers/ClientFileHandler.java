@@ -32,10 +32,6 @@ public class ClientFileHandler {
     }
 
     public void downloadFile(FileContainer fc) throws IOException, ClassNotFoundException {
-        System.out.printf("New file: %s. Size: %d. Parts: %d %n",
-                fc.getFileName(),
-                fc.getSize(),
-                fc.getOfParts());
         writeFileFromContainer(fc);
         while (fc.getPart() < fc.getOfParts()) {
             fc = (FileContainer) network.readObject();
@@ -47,7 +43,7 @@ public class ClientFileHandler {
         if (fc.getPart() == 0) {
             byte[] b = new byte[0];
             Files.write(Paths.get(USER_FOLDER + fc.getFileName()), b, StandardOpenOption.CREATE);
-            ch.write("Init file created");
+            ch.writeLine("Init file created");
             System.out.print("Downloading...   ");
         } else {
             Files.write(Paths.get(USER_FOLDER + fc.getFileName()), fc.getData(), StandardOpenOption.APPEND);
@@ -57,54 +53,20 @@ public class ClientFileHandler {
         }
     }
 
-    private static boolean fileExistOnClient(String fileName){
+    static boolean fileExistOnClient(String fileName){
         return Files.exists(Paths.get(USER_FOLDER + fileName));
     }
 
-    void sendFileRequest(String fileName) throws IOException, ClassNotFoundException {
-        if (fileExistOnClient(fileName)){
-            ch.write("File " + fileName + " already exist");
-            ch.write("Overwrite? Y/N");
-            if (ch.getText().equals("Y")){
-                if (Files.deleteIfExists(Paths.get(USER_FOLDER + fileName))){
-                    network.sendMsg(new FileRequest(fileName, network.getUser()));
-                    network.listenServerAnswer();
-                }
-            } else {
-                ch.write("Aborted");
-            }
-        } else {
-            network.sendMsg(new FileRequest(fileName, network.getUser()));
-            network.listenServerAnswer();
-        }
-    }
-
-    void sendDeleteRequest(String filename) throws IOException, ClassNotFoundException {
-        ch.write("Do you really want to delete file " + filename + " from server? Y/N");
-        if (ch.getText().equals("Y")){
-            network.sendMsg(new DeleteRequest(filename));
-            network.listenServerAnswer();
-        } else {
-            ch.write("Aborted");
-        }
-    }
-
-    void sendRenameRequest(String filename, String newFileName) throws IOException, ClassNotFoundException {
-        network.sendMsg(new RenameRequest(filename, newFileName));
-        network.listenServerAnswer();
-    }
-
-    void allFilesRequest() throws IOException, ClassNotFoundException {
-        network.sendMsg(new AllFilesRequest());
-        network.listenServerAnswer();
-    }
-
-
     public void printAllFiles(List<String> list){
-        list.forEach(System.out::println);
+        {
+            if (!list.isEmpty()){
+                list.forEach(System.out::println);
+            } else ch.writeLine("No such files in the folder");
+
+        }
     }
 
-    public void sendFile(String filename) throws IOException {
+    void sendFile(String filename) throws IOException {
         FileContainer fileContainer = prepareInitFileContainer(Paths.get(USER_FOLDER + filename));
         network.sendMsg(fileContainer);
         InputStream in = new FileInputStream(Paths.get(USER_FOLDER + filename).toFile()); //FIXME

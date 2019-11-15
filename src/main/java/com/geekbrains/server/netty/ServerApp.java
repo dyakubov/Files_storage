@@ -3,6 +3,7 @@ package com.geekbrains.server.netty;
 import com.geekbrains.common.Settings;
 import com.geekbrains.server.netty.handlers.AuthHandler;
 import com.geekbrains.server.netty.handlers.ServerFileHandler;
+import com.geekbrains.server.security.SecurityHandlers;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -14,7 +15,7 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
-import java.util.logging.FileHandler;
+import java.io.*;
 
 import static com.geekbrains.common.Settings.PORT;
 
@@ -22,10 +23,11 @@ public class ServerApp {
 
     private static final int MAX_OBJ_SIZE = 1024 * 1024 * 100; // 10 mb
 
-
     public void run() throws Exception {
         EventLoopGroup mainGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+        new SecurityHandlers();
+
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(mainGroup, workerGroup)
@@ -54,6 +56,7 @@ public class ServerApp {
             workerGroup.shutdownGracefully();
         }
     }
+
 
     public static void main(String[] args) throws Exception {
         new ServerApp().run();

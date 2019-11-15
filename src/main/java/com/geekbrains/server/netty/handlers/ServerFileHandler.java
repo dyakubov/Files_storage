@@ -2,12 +2,11 @@ package com.geekbrains.server.netty.handlers;
 
 import com.geekbrains.client.console_client.handlers.ConsoleHandler;
 import com.geekbrains.common.FileContainer;
-import com.geekbrains.common.User;
 import com.geekbrains.common.messages.client.ServiceMessage;
 import com.geekbrains.common.messages.server.FilesList;
 import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
-import com.geekbrains.server.security.SecurityHandler;
+import com.geekbrains.server.security.SecurityHandlers;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -25,32 +24,38 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.geekbrains.common.Settings.PART_SIZE;
-import static com.geekbrains.common.Settings.SERVER_FOLDER;
 
 public class ServerFileHandler extends ChannelInboundHandlerAdapter {
     private long fileSize;
     private int parts;
     private int part;
-    FileContainer fc;
+    private FileContainer fc;
+    private ServiceMessage sm;
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        System.out.println(msg.getClass());
         if (msg instanceof ServiceMessage) {
-            ServiceMessage sm = (ServiceMessage) msg;
-            System.out.println("ServiceMSG: " + sm.getServiceMessageType());
+            sm = (ServiceMessage) msg;
             switch (sm.getServiceMessageType()) {
                 case DIR:
                     ctx.writeAndFlush(new FilesList(ServerAnswerType.FILE_LIST, getAllFiles()));
                     break;
                 case GET:
-                    sendFile(Paths.get(SecurityHandler.getUserFolder() + "/" + sm.getBody()), ctx);
+                    sendFile(Paths.get(SecurityHandlers.list.get(sm.getUser().getLogin()).getUserFolder() +
+                            "/" +
+                            sm.getBody()),
+                            ctx);
                     break;
                 case DELETE:
-                    deleteFile(Paths.get(SecurityHandler.getUserFolder() + sm.getBody()), ctx);
+                    deleteFile(Paths.get(SecurityHandlers.list.get(sm.getUser().getLogin()).getUserFolder() +
+                            "/" +
+                            sm.getBody()),
+                            ctx);
                     break;
                 case RENAME:
-                    renameFile(Paths.get(SecurityHandler.getUserFolder() + sm.getBody().split(" ")[0]),
+                    renameFile(Paths.get(SecurityHandlers.list.get(sm.getUser().getLogin()).getUserFolder() +
+                                    "/" +
+                                    sm.getBody().split(" ")[0]),
                             sm.getBody().split(" ")[1],
                             ctx);
                     break;
@@ -59,18 +64,16 @@ public class ServerFileHandler extends ChannelInboundHandlerAdapter {
                     break;
             }
         } else if (msg instanceof FileContainer) {
-            System.out.println("Filecontainer received");
             fc = (FileContainer)msg;
             writeFileFromContainer(fc);
         } else {
-            System.out.println("HZ");
             ctx.fireChannelRead(msg);
         }
     }
 
     private void renameFile(Path path, String newFileNAme, ChannelHandlerContext ctx) {
         if (Files.exists(path)) {
-            if (path.toFile().renameTo(Paths.get(SecurityHandler.getUserFolder() + newFileNAme).toFile())) {
+            if (path.toFile().renameTo(Paths.get(SecurityHandlers.list.get(sm.getUser().getLogin()).getUserFolder() + "/" + newFileNAme).toFile())) {
                 ctx.writeAndFlush(new ServerMessage(ServerAnswerType.RENAMED));
             } else ctx.writeAndFlush(new ServerMessage(ServerAnswerType.ACCESS_DENIED));
         } else {
@@ -121,13 +124,13 @@ public class ServerFileHandler extends ChannelInboundHandlerAdapter {
         fileContainer.setPart(++part);
         fileContainer.setData(tmp);
         ctx.writeAndFlush(fileContainer);
-        System.out.println("Sent " + part + " of " + parts + ". Size: " + fileContainer.getData().length);
+        //System.out.println("Sent " + part + " of " + parts + ". Size: " + fileContainer.getData().length);
 
     }
 
     @NotNull
     private FileContainer prepareInitFileContainer(Path path) {
-        FileContainer fileContainer = new FileContainer(path);
+        FileContainer fileContainer = new FileContainer(path, null);
         fileSize = path.toFile().length();
         parts = countParts(fileSize);
         part = 0;
@@ -158,7 +161,7 @@ public class ServerFileHandler extends ChannelInboundHandlerAdapter {
 
     private List<String> getAllFiles() {
         try {
-            return Files.walk(SecurityHandler.getUserFolder()).filter(Files::isRegularFile).filter(f -> {
+            return Files.walk(SecurityHandlers.list.get(sm.getUser().getLogin()).getUserFolder()).filter(Files::isRegularFile).filter(f -> {
                 try {
                     return !Files.isHidden(f);
                 } catch (IOException e) {
@@ -175,13 +178,11 @@ public class ServerFileHandler extends ChannelInboundHandlerAdapter {
     private void writeFileFromContainer(FileContainer fc) throws IOException {
         if (fc.getPart() == 0) {
             byte[] b = new byte[0];
-            Files.write(Paths.get(SecurityHandler.getUserFolder() + "/" + fc.getFileName()), b, StandardOpenOption.CREATE);
+            Files.write(Paths.get(SecurityHandlers.list.get(fc.getUser().getLogin()).getUserFolder() + "/" + fc.getFileName()), b, StandardOpenOption.CREATE);
             System.out.println("Init file created");
             System.out.print("Downloading...   ");
         } else {
-            Files.write(Paths.get(SecurityHandler.getUserFolder() + "/"+ fc.getFileName()), fc.getData(), StandardOpenOption.APPEND);
-//            System.out.printf("Written part: %d of %d. Size: %d %n",
-//                    fc.getPart(), fc.getOfParts(), fc.getData().length);
+            Files.write(Paths.get(SecurityHandlers.list.get(fc.getUser().getLogin()).getUserFolder() + "/" + fc.getFileName()), fc.getData(), StandardOpenOption.APPEND);
             ConsoleHandler.printProgressBar(fc.getPart(), fc.getOfParts());
         }
     }

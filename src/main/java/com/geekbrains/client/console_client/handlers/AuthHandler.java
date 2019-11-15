@@ -7,6 +7,7 @@ import com.geekbrains.common.messages.client.ServiceMessage;
 import com.geekbrains.common.messages.client.ServiceMessageType;
 import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
+import com.geekbrains.server.netty.ServerApp;
 
 import java.io.IOException;
 
@@ -32,6 +33,7 @@ public class AuthHandler {
             ServerMessage sm = (ServerMessage) network.readObject();
             if (sm.getServerAnswerType().equals(ServerAnswerType.AUTH_OK)) {
                 ch.writeLine("Auth OK");
+                network.setUser(user);
                 ch.startSession(user); //TODO uncomment after created auth algorithm
                 authOK = true;
                 return;

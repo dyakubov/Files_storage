@@ -1,4 +1,4 @@
-package com.geekbrains.server.users;
+package com.geekbrains.server.auth.inner_auth;
 
 import com.geekbrains.common.User;
 
@@ -17,14 +17,7 @@ public class Users implements Serializable {
         return allUsers;
     }
 
-    public int addToAllUserAndReturnID(User user){
-        int lastID = Arrays.stream(allUsers.entrySet().toArray()).mapToInt(v -> user.getId()).max().orElseGet(()->0);
-        user.setId(++lastID);
+    public void addToAllUsers(User user){
         allUsers.put(user.getLogin(), user);
-        return lastID;
-    }
-
-    public User getUserById(int id){
-        return allUsers.get(id);
     }
 }

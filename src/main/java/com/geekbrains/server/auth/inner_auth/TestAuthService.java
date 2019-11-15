@@ -1,19 +1,24 @@
-package com.geekbrains.server.auth;
+package com.geekbrains.server.auth.inner_auth;
 
 import com.geekbrains.common.User;
 import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
+import com.geekbrains.server.auth.AuthInterface;
 import com.geekbrains.server.security.SecurityHandler;
-import com.geekbrains.server.users.Users;
+import com.geekbrains.server.security.SecurityHandlers;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 
 public class TestAuthService implements AuthInterface {
     private Users users;
-    private SecurityHandler securityHandler;
+
 
     public TestAuthService(Users users) {
         this.users = users;
+        //restoreUsers();
     }
 
     @Override
@@ -21,8 +26,7 @@ public class TestAuthService implements AuthInterface {
         if (userExist(login)) {
             if (users.getAllUsers().get(login).getPass().equals(pass)) {
                 System.out.println("Login OK for user: " + login);
-                securityHandler = new SecurityHandler(users.getAllUsers().get(login));
-                securityHandler.createUserFolder(users.getAllUsers().get(login));
+                SecurityHandlers.list.put(login, new SecurityHandler(users.getAllUsers().get(login)));
                 return new ServerMessage(ServerAnswerType.AUTH_OK);
             } else {
                 System.out.println("Wrong password for user:" + login);
@@ -40,7 +44,7 @@ public class TestAuthService implements AuthInterface {
             return new ServerMessage(ServerAnswerType.USER_ALREADY_EXIST);
         } else {
             User user = new User(-1, login,pass);
-            users.addToAllUserAndReturnID(user);
+            users.addToAllUsers(user);
             return new ServerMessage(ServerAnswerType.REG_OK);
 
         }
@@ -50,4 +54,21 @@ public class TestAuthService implements AuthInterface {
     public boolean userExist(String login) {
         return users.getAllUsers().containsKey(login);
     }
+
+    private void restoreUsers() {
+        FileInputStream fileInputStream = null;
+        try {
+            fileInputStream = new FileInputStream("/Users/yakubov-dd/Documents/files_storage/savedUsers");
+        } catch (FileNotFoundException e) {
+            System.out.println("No saved users");
+        }
+        try {
+            ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+            this.users = (Users) objectInputStream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+    }
+
 }

@@ -115,11 +115,11 @@ public class ConsoleHandler {
         return console.nextLine();
     }
 
-    void writeLine(String text){
+    public void writeLine(String text){
         System.out.println(text);
     }
 
-    void write(String text){
+    public void write(String text){
         System.out.print(text);
     }
 

@@ -10,32 +10,33 @@ import java.nio.file.Paths;
 
 public class SecurityHandler {
     private User currentUser;
-    private static Path userFolder;
+    private Path userFolder;
 
     public SecurityHandler(User currentUser) {
         this.currentUser = currentUser;
-        userFolder = Paths.get(Settings.SERVER_FOLDER + currentUser.getLogin());
+        createUserFolder();
     }
 
-    boolean checkPermission(String fileName){
-        return (Files.exists(Paths.get(userFolder + fileName)));
-    }
+    private void createUserFolder() {
+        Path p = Paths.get(Settings.SERVER_FOLDER + currentUser.getLogin());
 
-    public static Path getUserFolder() {
-        return userFolder;
+        if (!Files.exists(p)) {
+            try {
+                Files.createDirectory(p);
+                userFolder = p;
+            } catch (IOException e) {
+                System.out.println(p + " already exist");
+            }
+        } else {
+            userFolder = p;
+        }
     }
 
     public User getCurrentUser() {
         return currentUser;
     }
 
-    public void createUserFolder(User user) {
-        if (!Files.exists(Paths.get(Settings.SERVER_FOLDER + user.getLogin()))){
-            try {
-                Files.createDirectory(Paths.get(Settings.SERVER_FOLDER + user.getLogin()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else System.out.println(Paths.get(Settings.SERVER_FOLDER + user.getLogin()) + " already exist");
+    public Path getUserFolder() {
+        return userFolder;
     }
 }

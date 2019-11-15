@@ -97,7 +97,7 @@ public class ClientFileHandler {
 
     @NotNull
     private FileContainer prepareInitFileContainer(Path path) {
-        FileContainer fileContainer = new FileContainer(path);
+        FileContainer fileContainer = new FileContainer(path, network.getUser());
         fileSize = path.toFile().length();
         parts = countParts(fileSize);
         part = 0;

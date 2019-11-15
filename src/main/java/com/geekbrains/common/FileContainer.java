@@ -5,18 +5,20 @@ import java.nio.file.Path;
 
 public class FileContainer implements Serializable {
     private static final long serialVersionUID = 5193392663743561680L;
+    private User user;
     private String fileName;
     private byte[] data;
     private int part;
     private int ofParts;
     private long size;
 
-    public FileContainer(Path path) {
+    public FileContainer(Path path, User user) {
         this.fileName = path.getFileName().toString();
         this.data = new byte[0];
         this.part = 0;
         this.ofParts = 1;
         this.size = 0;
+        this.user = user;
     }
 
     public FileContainer() {
@@ -52,7 +54,9 @@ public class FileContainer implements Serializable {
         return part;
     }
 
-
+    public User getUser() {
+        return user;
+    }
 
     public int getOfParts() {
         return ofParts;

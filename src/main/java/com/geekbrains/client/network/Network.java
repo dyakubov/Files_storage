@@ -15,8 +15,7 @@ import java.net.Socket;
 import java.util.List;
 import java.util.Scanner;
 
-import static com.geekbrains.common.Settings.HOST;
-import static com.geekbrains.common.Settings.PORT;
+import static com.geekbrains.common.Settings.*;
 
 public class Network {
     private ObjectEncoderOutputStream oeos = null;
@@ -34,20 +33,30 @@ public class Network {
     }
 
     public void connect(){
-        try (Socket socket = new Socket(HOST, PORT)) {
-            oeos = new ObjectEncoderOutputStream(socket.getOutputStream());
-            odis = new ObjectDecoderInputStream(socket.getInputStream());
+        int attempts = 0;
+        ch = new ConsoleHandler(console, this);
+        while (attempts < MAX_CONNECTION_ATTEMPTS){
+            try (Socket socket = new Socket(HOST, PORT)) {
+                oeos = new ObjectEncoderOutputStream(socket.getOutputStream());
+                odis = new ObjectDecoderInputStream(socket.getInputStream());
+                initHandlers();
+                ah.clientAuth();
+            } catch (IOException | ClassNotFoundException e) {
+                attempts++;
+                ch.writeLine(e.getMessage());
+                ch.writeLine("Connection retry pending after " + MAX_CONNECTION_ATTEMPTS + "ms");
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
 
-            initHandlers();
-
-            ah.clientAuth();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            }
         }
     }
 
     private void initHandlers() {
-        ch = new ConsoleHandler(console, this);
+
         ah = new AuthHandler(ch, this);
         cfh = new ClientFileHandler(this);
     }
@@ -90,5 +99,9 @@ public class Network {
 
     public ClientFileHandler getCfh() {
         return cfh;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

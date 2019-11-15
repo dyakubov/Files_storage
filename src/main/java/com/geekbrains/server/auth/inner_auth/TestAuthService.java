@@ -7,10 +7,9 @@ import com.geekbrains.server.auth.AuthInterface;
 import com.geekbrains.server.security.SecurityHandler;
 import com.geekbrains.server.security.SecurityHandlers;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class TestAuthService implements AuthInterface {
     private Users users;
@@ -18,7 +17,9 @@ public class TestAuthService implements AuthInterface {
 
     public TestAuthService(Users users) {
         this.users = users;
-        //restoreUsers();
+        if (Files.exists(Paths.get("src/main/resources/savedUsers/users.dat"))){
+            restoreUsers();
+        }
     }
 
     @Override
@@ -45,6 +46,7 @@ public class TestAuthService implements AuthInterface {
         } else {
             User user = new User(-1, login,pass);
             users.addToAllUsers(user);
+            saveUsers();
             return new ServerMessage(ServerAnswerType.REG_OK);
 
         }
@@ -58,7 +60,7 @@ public class TestAuthService implements AuthInterface {
     private void restoreUsers() {
         FileInputStream fileInputStream = null;
         try {
-            fileInputStream = new FileInputStream("/Users/yakubov-dd/Documents/files_storage/savedUsers");
+            fileInputStream = new FileInputStream("/Users/yakubov-dd/Documents/files_storage/src/main/resources/savedUsers/users.dat");
         } catch (FileNotFoundException e) {
             System.out.println("No saved users");
         }
@@ -68,6 +70,25 @@ public class TestAuthService implements AuthInterface {
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+
+    }
+
+    private void saveUsers(){
+        FileOutputStream outputStream = null;
+        try {
+            outputStream = new FileOutputStream("/Users/yakubov-dd/Documents/files_storage/src/main/resources/savedUsers/users.dat");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        ObjectOutputStream objectOutputStream;
+        try {
+            objectOutputStream = new ObjectOutputStream(outputStream);
+            objectOutputStream.writeObject(users);
+            objectOutputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
     }
 

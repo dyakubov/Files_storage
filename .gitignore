@@ -3,3 +3,5 @@
 *.iws
 # Project exclude paths
 /target/
+/client_storage/
+/server_storage/

@@ -1,0 +1,7 @@
+Command     |   Example
+            |
+get         |   get filename.txt
+rename      |   rename filename.txt newfilename.txt
+delete      |   delete filename.txt
+upload      |   upload filename.txt
+dir         |   dir

@@ -8,7 +8,6 @@ import java.io.Serializable;
 public class ServerMessage implements Serializable {
     private static final long serialVersionUID = 5193392663743561680L;
     private ServerAnswerType serverAnswerType;
-    private FileContainer fileContainer;
     private String message;
 
     public ServerMessage(ServerAnswerType serverAnswerType) {
@@ -21,9 +20,6 @@ public class ServerMessage implements Serializable {
 
     public ServerAnswerType getServerAnswerType() {
         return serverAnswerType;
-    }
-    public FileContainer getFileContainer() {
-        return fileContainer;
     }
     public String getMessage() {
         return message;

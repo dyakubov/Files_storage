@@ -6,7 +6,7 @@ import com.geekbrains.common.messages.client.ServiceMessage;
 import com.geekbrains.common.messages.server.FilesList;
 import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
-import com.geekbrains.server.security.SecurityHandlers;
+import com.geekbrains.server.security.Users;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -38,29 +38,29 @@ public class ServerFileHandler extends ChannelInboundHandlerAdapter {
             sm = (ServiceMessage) msg;
             switch (sm.getServiceMessageType()) {
                 case DIR:
-                    ctx.writeAndFlush(new FilesList(ServerAnswerType.FILE_LIST, getAllFiles()));
+                    ctx.writeAndFlush(new FilesList(getAllFiles()));
                     break;
                 case GET:
-                    sendFile(Paths.get(SecurityHandlers.list.get(sm.getUser().getLogin()).getUserFolder() +
+                    sendFile(Paths.get(Users.list.get(sm.getUser().getLogin()).getUserFolder() +
                             "/" +
                             sm.getBody()),
                             ctx);
                     break;
                 case DELETE:
-                    deleteFile(Paths.get(SecurityHandlers.list.get(sm.getUser().getLogin()).getUserFolder() +
+                    deleteFile(Paths.get(Users.list.get(sm.getUser().getLogin()).getUserFolder() +
                             "/" +
                             sm.getBody()),
                             ctx);
                     break;
                 case RENAME:
-                    renameFile(Paths.get(SecurityHandlers.list.get(sm.getUser().getLogin()).getUserFolder() +
+                    renameFile(Paths.get(Users.list.get(sm.getUser().getLogin()).getUserFolder() +
                                     "/" +
                                     sm.getBody().split(" ")[0]),
                             sm.getBody().split(" ")[1],
                             ctx);
                     break;
                 default:
-                    System.out.println("Another commands doesn't support");
+                    System.out.println("Another commands doesn't support: " + sm.getBody());
                     break;
             }
         } else if (msg instanceof FileContainer) {
@@ -73,9 +73,9 @@ public class ServerFileHandler extends ChannelInboundHandlerAdapter {
 
     private void renameFile(Path path, String newFileNAme, ChannelHandlerContext ctx) {
         if (Files.exists(path)) {
-            if (path.toFile().renameTo(Paths.get(SecurityHandlers.list.get(sm.getUser().getLogin()).getUserFolder() + "/" + newFileNAme).toFile())) {
+            if (path.toFile().renameTo(Paths.get(Users.list.get(sm.getUser().getLogin()).getUserFolder() + "/" + newFileNAme).toFile())) {
                 ctx.writeAndFlush(new ServerMessage(ServerAnswerType.RENAMED));
-            } else ctx.writeAndFlush(new ServerMessage(ServerAnswerType.ACCESS_DENIED));
+            } else ctx.writeAndFlush(new ServerMessage(ServerAnswerType.RENAME_FAILED));
         } else {
             System.out.println("File " + path.getFileName() + " not found");
             ctx.writeAndFlush(new ServerMessage(ServerAnswerType.FILE_NOT_FOUND));
@@ -124,8 +124,6 @@ public class ServerFileHandler extends ChannelInboundHandlerAdapter {
         fileContainer.setPart(++part);
         fileContainer.setData(tmp);
         ctx.writeAndFlush(fileContainer);
-        //System.out.println("Sent " + part + " of " + parts + ". Size: " + fileContainer.getData().length);
-
     }
 
     @NotNull
@@ -138,12 +136,11 @@ public class ServerFileHandler extends ChannelInboundHandlerAdapter {
         fileContainer.setSize(fileSize);
         fileContainer.setPart(part);
         System.out.printf("Init container ready. File size: %d bytes. Parts: %d %n", fileSize, parts);
-        System.out.println();
         return fileContainer;
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
     }
@@ -161,7 +158,7 @@ public class ServerFileHandler extends ChannelInboundHandlerAdapter {
 
     private List<String> getAllFiles() {
         try {
-            return Files.walk(SecurityHandlers.list.get(sm.getUser().getLogin()).getUserFolder()).filter(Files::isRegularFile).filter(f -> {
+            return Files.walk(Users.list.get(sm.getUser().getLogin()).getUserFolder()).filter(Files::isRegularFile).filter(f -> {
                 try {
                     return !Files.isHidden(f);
                 } catch (IOException e) {
@@ -178,11 +175,11 @@ public class ServerFileHandler extends ChannelInboundHandlerAdapter {
     private void writeFileFromContainer(FileContainer fc) throws IOException {
         if (fc.getPart() == 0) {
             byte[] b = new byte[0];
-            Files.write(Paths.get(SecurityHandlers.list.get(fc.getUser().getLogin()).getUserFolder() + "/" + fc.getFileName()), b, StandardOpenOption.CREATE);
+            Files.write(Paths.get(Users.list.get(fc.getUser().getLogin()).getUserFolder() + "/" + fc.getFileName()), b, StandardOpenOption.CREATE);
             System.out.println("Init file created");
             System.out.print("Downloading...   ");
         } else {
-            Files.write(Paths.get(SecurityHandlers.list.get(fc.getUser().getLogin()).getUserFolder() + "/" + fc.getFileName()), fc.getData(), StandardOpenOption.APPEND);
+            Files.write(Paths.get(Users.list.get(fc.getUser().getLogin()).getUserFolder() + "/" + fc.getFileName()), fc.getData(), StandardOpenOption.APPEND);
             ConsoleHandler.printProgressBar(fc.getPart(), fc.getOfParts());
         }
     }

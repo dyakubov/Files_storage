@@ -13,11 +13,11 @@ public class Users implements Serializable {
         allUsers = new HashMap<>();
     }
 
-    public Map<String, User> getAllUsers(){
+    Map<String, User> getAllUsers(){
         return allUsers;
     }
 
-    public void addToAllUsers(User user){
+    void addToAllUsers(User user){
         allUsers.put(user.getLogin(), user);
     }
 }

@@ -3,7 +3,6 @@ package com.geekbrains.server.netty.handlers;
 import com.geekbrains.common.FileContainer;
 import com.geekbrains.common.messages.client.ServiceMessage;
 import com.geekbrains.common.messages.client.ServiceMessageType;
-import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
 import com.geekbrains.server.auth.AuthInterface;
 import com.geekbrains.server.auth.inner_auth.TestAuthService;
@@ -18,8 +17,8 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
     private AuthInterface authInterface = new TestAuthService(users);
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("Client connected...");
+    public void channelActive(ChannelHandlerContext ctx) {
+        System.out.println("Client connected");
     }
 
     @Override
@@ -45,7 +44,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.flush();
     }
 }

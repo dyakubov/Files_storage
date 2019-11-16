@@ -1,23 +1,24 @@
 package com.geekbrains.server.auth.inner_auth;
 
+import com.geekbrains.common.Settings;
 import com.geekbrains.common.User;
 import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
 import com.geekbrains.server.auth.AuthInterface;
-import com.geekbrains.server.security.SecurityHandler;
-import com.geekbrains.server.security.SecurityHandlers;
+import com.geekbrains.server.security.UsersHandler;
+import com.geekbrains.server.security.Users;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class TestAuthService implements AuthInterface {
-    private Users users;
+    private com.geekbrains.server.auth.inner_auth.Users users;
 
 
-    public TestAuthService(Users users) {
+    public TestAuthService(com.geekbrains.server.auth.inner_auth.Users users) {
         this.users = users;
-        if (Files.exists(Paths.get("src/main/resources/savedUsers/users.dat"))){
+        if (Files.exists(Paths.get(Settings.SAVED_USERS_FOLDER))){
             restoreUsers();
         }
     }
@@ -27,7 +28,7 @@ public class TestAuthService implements AuthInterface {
         if (userExist(login)) {
             if (users.getAllUsers().get(login).getPass().equals(pass)) {
                 System.out.println("Login OK for user: " + login);
-                SecurityHandlers.list.put(login, new SecurityHandler(users.getAllUsers().get(login)));
+                Users.list.put(login, new UsersHandler(users.getAllUsers().get(login)));
                 return new ServerMessage(ServerAnswerType.AUTH_OK);
             } else {
                 System.out.println("Wrong password for user:" + login);
@@ -60,13 +61,13 @@ public class TestAuthService implements AuthInterface {
     private void restoreUsers() {
         FileInputStream fileInputStream = null;
         try {
-            fileInputStream = new FileInputStream("/Users/yakubov-dd/Documents/files_storage/src/main/resources/savedUsers/users.dat");
+            fileInputStream = new FileInputStream(Settings.SAVED_USERS_FOLDER);
         } catch (FileNotFoundException e) {
             System.out.println("No saved users");
         }
         try {
             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-            this.users = (Users) objectInputStream.readObject();
+            this.users = (com.geekbrains.server.auth.inner_auth.Users) objectInputStream.readObject();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -76,7 +77,7 @@ public class TestAuthService implements AuthInterface {
     private void saveUsers(){
         FileOutputStream outputStream = null;
         try {
-            outputStream = new FileOutputStream("/Users/yakubov-dd/Documents/files_storage/src/main/resources/savedUsers/users.dat");
+            outputStream = new FileOutputStream(Settings.SAVED_USERS_FOLDER);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -88,8 +89,5 @@ public class TestAuthService implements AuthInterface {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
-
 }

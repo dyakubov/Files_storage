@@ -8,11 +8,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class SecurityHandler {
+public class UsersHandler {
     private User currentUser;
     private Path userFolder;
 
-    public SecurityHandler(User currentUser) {
+    public UsersHandler(User currentUser) {
         this.currentUser = currentUser;
         createUserFolder();
     }

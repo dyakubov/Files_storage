@@ -132,7 +132,6 @@ public class ConsoleHandler {
         }
         if (part%(parts/10) == 0){
             System.out.print("\b\b\b");
-            ///System.out.print("...");
             System.out.print(((((part*10)/parts)+1)*10)+"%");
         } else if (part == parts) {
             System.out.println();

@@ -22,9 +22,6 @@ public class ServiceMessage implements Serializable {
         this.user = user;
     }
 
-    public ServiceMessage() {
-    }
-
     public User getUser() {
         return user;
     }
@@ -35,10 +32,5 @@ public class ServiceMessage implements Serializable {
 
     public ServiceMessageType getServiceMessageType() {
         return serviceMessageType;
-    }
-
-
-    public void setServiceMessageType(ServiceMessageType serviceMessageType) {
-        this.serviceMessageType = serviceMessageType;
     }
 }

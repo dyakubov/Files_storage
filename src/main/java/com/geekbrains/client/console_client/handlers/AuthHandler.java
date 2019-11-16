@@ -7,7 +7,6 @@ import com.geekbrains.common.messages.client.ServiceMessage;
 import com.geekbrains.common.messages.client.ServiceMessageType;
 import com.geekbrains.common.messages.server.ServerAnswerType;
 import com.geekbrains.common.messages.server.ServerMessage;
-import com.geekbrains.server.netty.ServerApp;
 
 import java.io.IOException;
 
@@ -34,13 +33,12 @@ public class AuthHandler {
             if (sm.getServerAnswerType().equals(ServerAnswerType.AUTH_OK)) {
                 ch.writeLine("Auth OK");
                 network.setUser(user);
-                ch.startSession(user); //TODO uncomment after created auth algorithm
+                ch.startSession(user); //TODO uncomment after creating auth algorithm
                 authOK = true;
                 return;
 
             } else if (sm.getServerAnswerType().equals(ServerAnswerType.USER_NOT_FOUND)) {
                 boolean regOK = false;
-
                 while (!regOK) {
                     ch.writeLine("Please register");
                     ch.writeLine("Type login");
@@ -58,7 +56,7 @@ public class AuthHandler {
             }
         }
 
-        //TODO delete after created auth algorithm
+        //TODO delete after creating auth algorithm
         ch.startSession(new User(1, "test", "test"));
     }
 

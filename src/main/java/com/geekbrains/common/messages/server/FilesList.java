@@ -3,8 +3,8 @@ import java.util.List;
 
 public class FilesList extends ServerMessage {
     private List<String> allFiles;
-    public FilesList(ServerAnswerType serverAnswerType, List<String> allFiles) {
-        super(serverAnswerType);
+    public FilesList(List<String> allFiles) {
+        super(ServerAnswerType.FILE_LIST);
         this.allFiles = allFiles;
     }
 

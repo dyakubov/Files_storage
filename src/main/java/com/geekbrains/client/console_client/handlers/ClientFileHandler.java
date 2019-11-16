@@ -47,8 +47,6 @@ public class ClientFileHandler {
             System.out.print("Downloading...   ");
         } else {
             Files.write(Paths.get(USER_FOLDER + fc.getFileName()), fc.getData(), StandardOpenOption.APPEND);
-//            System.out.printf("Written part: %d of %d. Size: %d %n",
-//                    fc.getPart(), fc.getOfParts(), fc.getData().length);
             ConsoleHandler.printProgressBar(fc.getPart(), fc.getOfParts());
         }
     }
@@ -61,7 +59,7 @@ public class ClientFileHandler {
         {
             if (!list.isEmpty()){
                 list.forEach(System.out::println);
-            } else ch.writeLine("No such files in the folder");
+            } else ch.writeLine("No files in the folder");
 
         }
     }
@@ -69,7 +67,7 @@ public class ClientFileHandler {
     void sendFile(String filename) throws IOException {
         FileContainer fileContainer = prepareInitFileContainer(Paths.get(USER_FOLDER + filename));
         network.sendMsg(fileContainer);
-        InputStream in = new FileInputStream(Paths.get(USER_FOLDER + filename).toFile()); //FIXME
+        InputStream in = new FileInputStream(Paths.get(USER_FOLDER + filename).toFile());
         byte[] tmp = new byte[(int) PART_SIZE];
         long offset = 0;
         long count;
@@ -81,7 +79,6 @@ public class ClientFileHandler {
             if (checkIsLastPart()){
                 partSize = fileSize - (part*PART_SIZE);
                 tmp = new byte[(int) partSize];
-                //System.out.println("Last part detected: " + partSize);
             }
             while (count != partSize){
                 count = in.read(tmp, 0, (int)(partSize));
@@ -90,7 +87,6 @@ public class ClientFileHandler {
             fileContainer.setPart(++part);
             fileContainer.setData(tmp);
             network.sendMsg(fileContainer);
-            //System.out.println("Sent " + part + " of " + parts + ". Size: " + fileContainer.getData().length);
             ConsoleHandler.printProgressBar(part, parts);
         }
     }
@@ -105,7 +101,6 @@ public class ClientFileHandler {
         fileContainer.setSize(fileSize);
         fileContainer.setPart(part);
         System.out.printf("Init container ready. File size: %d bytes. Parts: %d %n", fileSize, parts);
-        System.out.println();
         return fileContainer;
     }
 

@@ -7,5 +7,4 @@ public enum ServiceMessageType {
     RENAME,
     DELETE,
     DIR,
-    UPLOAD
 }
